@@ -2,12 +2,23 @@ import argparse
 
 def process_cli(knowledge_db, embedding_handler):
     parser = argparse.ArgumentParser(description="Retainium AI CLI - Personal Knowledge Database")
-    parser.add_argument("command", choices=["add", "query"], help="Command to execute")
-    parser.add_argument("--text", type=str, required=True, help="Text input for the command")
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    # Add Command
+    add_parser = subparsers.add_parser("add", help="Add a new entry")
+    add_parser.add_argument("--text", type=str, required=True, help="Text input for the entry")
+
+    # Query Command
+    query_parser = subparsers.add_parser("query", help="Query knowledge base")
+    query_parser.add_argument("--text", type=str, required=True, help="Query text")
+
+    # List Command
+    subparsers.add_parser("list", help="List all stored knowledge")
+
     args = parser.parse_args()
 
     if args.command == "add":
-        embedding = embedding_handler.get_embedding(args.text)
+        embedding = embedding_handler.embed(args.text)
 
         if embedding is None:
             print("Error: Failed to generate embedding.")
@@ -17,12 +28,24 @@ def process_cli(knowledge_db, embedding_handler):
         print("Knowledge added successfully.")
     
     elif args.command == "query":
-        embedding = embedding_handler.get_embedding(args.text)
+        embedding = embedding_handler.embed(args.text)
         results = knowledge_db.query(args.text, embedding)
 
-        print("Query Results:")
         if results and isinstance(results, list) and len(results) > 0:
-            for i, doc in enumerate(results[0]):  # Assuming first list contains documents
+            print("Query Results:")
+            for i, doc in enumerate(results.get("documents", [[]])[0]):
                 print(f"{i + 1}. {doc}")
         else:
             print("No relevant knowledge found.")
+
+    elif args.command == "list":
+        entries = knowledge_db.list_entries()
+        print("DEBUG: Retrieved entries:", entries)  # Add this line to check the structure
+
+        if not entries:
+            print("No entries found.")
+        else:
+            print("Stored Knowledge Entries:")
+            for entry in entries:
+                print(f"ID: {entry['id']}, Text: {entry['document']}")
+

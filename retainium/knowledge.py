@@ -4,11 +4,9 @@ import uuid
 from typing import List
 
 class KnowledgeDB:
-    #def __init__(self, db_path: str, collection_name: str = "knowledge"):
     def __init__(self, db_path="data/knowledge_db", collection_name="retainium_knowledge"):
         os.makedirs(db_path, exist_ok=True)  # Ensure the directory exists
         self.client = chromadb.PersistentClient(path=db_path)
-        #self.collection = self.client.get_or_create_collection(name=collection_name)
         self.collection = self.client.get_or_create_collection(name=collection_name)  # Valid collection name
 
     def add_entry(self, text: str, embedding: List[float]):
@@ -39,3 +37,10 @@ class KnowledgeDB:
         
         retrieved_docs = results.get("documents", [[]])[0]  # Extract documents from result
         return retrieved_docs
+
+    def list_entries(self):
+        data = self.collection.get()  # Fetch all stored entries
+        return [
+            {"id": entry_id, "document": doc}
+            for entry_id, doc in zip(data["ids"], data["documents"])
+        ] if "ids" in data and "documents" in data else []
