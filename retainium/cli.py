@@ -1,7 +1,9 @@
 import argparse
+from retainium.diagnostics import Diagnostics
 
 def process_cli(knowledge_db, embedding_handler):
     parser = argparse.ArgumentParser(description="Retainium AI CLI - Personal Knowledge Database")
+    parser.add_argument("--debug", action="store_true", help="Enable debug output")  # Add debug flag
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     # Add Command
@@ -17,41 +19,43 @@ def process_cli(knowledge_db, embedding_handler):
 
     args = parser.parse_args()
 
+    # Enable debugging if --debug is set
+    Diagnostics.enable_debug(args.debug)
+
     if args.command == "add":
         embedding = embedding_handler.embed_text(args.text)
-
         if embedding is None or not isinstance(embedding, list):
-            print("Error: Failed to generate a valid embedding.")
+            Diagnostics.error("failed to generate embedding")
             return
 
         knowledge_db.add_entry(args.text, embedding)
-        print("Knowledge added successfully.")
-    
+        Diagnostics.note("knowledge added successfully")
+
     elif args.command == "list":
         entries = knowledge_db.list_entries()
-        print("DEBUG: Retrieved entries:", entries)
+        Diagnostics.debug(f"retrieved entries: {entries}")
 
         if not entries:
-            print("No entries found.")
+            Diagnostics.warning("no entries found")
         else:
-            print("Stored Knowledge Entries:")
+            Diagnostics.note("stored knowledge entries:")
             for entry in entries:
                 print(f"ID: {entry['id']}, Text: {entry['document']}")
 
     elif args.command == "query":
         embedding = embedding_handler.embed_text(args.text)
+        Diagnostics.debug(f"generated embedding: {embedding}")
 
         if embedding is None or not isinstance(embedding, list):
-            print("Error: Failed to generate a valid embedding for the query.")
+            Diagnostics.error("failed to generate a valid embedding for the query")
             return
 
-        print(f"DEBUG: Generated embedding: {embedding}")
-        results = knowledge_db.query(embedding)  # Removed 'text' from parameters
-        print(f"DEBUG: Query results: {results}")
+        results = knowledge_db.query(embedding)
+        Diagnostics.debug(f"query results: {results}")
 
         if results and isinstance(results, list) and len(results) > 0:
-            print("Query Results:")
+            Diagnostics.note("query results:")
             for i, doc in enumerate(results):
                 print(f"{i + 1}. {doc}")
         else:
-            print("No relevant knowledge found.")
+            Diagnostics.warning("no relevant knowledge found")

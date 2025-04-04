@@ -2,6 +2,7 @@ import chromadb
 import os
 import uuid
 from typing import List
+from retainium.diagnostics import Diagnostics
 
 class KnowledgeDB:
     def __init__(self, db_path="data/knowledge_db", collection_name="retainium_knowledge"):
@@ -10,7 +11,7 @@ class KnowledgeDB:
         self.collection = self.client.get_or_create_collection(name=collection_name)
 
         if self.collection is None:
-            raise RuntimeError("Failed to create or retrieve the collection.")
+            raise RuntimeError("failed to create or retrieve the collection.")
 
     def list_entries(self):
         """Lists all stored knowledge entries."""
@@ -23,10 +24,10 @@ class KnowledgeDB:
     def add_entry(self, text: str, embedding: List[float]):
         """Adds a new entry to the knowledge database with embedding."""
         if not text or not isinstance(text, str):
-            raise ValueError("Text must be a non-empty string.")
+            raise ValueError("text must be a non-empty string.")
 
         if not isinstance(embedding, list) or not embedding or not all(isinstance(i, float) for i in embedding):
-            raise ValueError("Embedding must be a non-empty list of floats.")
+            raise ValueError("embedding must be a non-empty list of floats.")
 
         doc_id = str(uuid.uuid4())
 
@@ -37,18 +38,19 @@ class KnowledgeDB:
             ids=[doc_id]
         )
 
-        print(f"Entry added with ID: {doc_id}")
+        Diagnostics.debug(f"Entry added with ID: {doc_id}")
         return doc_id
 
     def query(self, embedding: List[float], top_k: int = 5):
         """Retrieves the most relevant entries based on embedding similarity."""
         if not isinstance(embedding, list) or not all(isinstance(i, float) for i in embedding):
-            raise ValueError("Embedding must be a list of floats.")
+            raise ValueError("embedding must be a list of floats.")
     
         results = self.collection.query(
             query_embeddings=[embedding],
             n_results=top_k
         )
     
-        retrieved_docs = results.get("documents", [[]])[0]  # Extract documents from result
+        # Extract documents from result
+        retrieved_docs = results.get("documents", [[]])[0]  
         return retrieved_docs
