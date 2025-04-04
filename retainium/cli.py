@@ -18,10 +18,10 @@ def process_cli(knowledge_db, embedding_handler):
     args = parser.parse_args()
 
     if args.command == "add":
-        embedding = embedding_handler.embed(args.text)
+        embedding = embedding_handler.embed_text(args.text)
 
-        if embedding is None:
-            print("Error: Failed to generate embedding.")
+        if embedding is None or not isinstance(embedding, list):
+            print("Error: Failed to generate a valid embedding.")
             return
 
         knowledge_db.add_entry(args.text, embedding)
@@ -29,7 +29,7 @@ def process_cli(knowledge_db, embedding_handler):
     
     elif args.command == "list":
         entries = knowledge_db.list_entries()
-        print("DEBUG: Retrieved entries:", entries)  # Add this line to check the structure
+        print("DEBUG: Retrieved entries:", entries)
 
         if not entries:
             print("No entries found.")
@@ -40,14 +40,18 @@ def process_cli(knowledge_db, embedding_handler):
 
     elif args.command == "query":
         embedding = embedding_handler.embed_text(args.text)
+
+        if embedding is None or not isinstance(embedding, list):
+            print("Error: Failed to generate a valid embedding for the query.")
+            return
+
         print(f"DEBUG: Generated embedding: {embedding}")
-        results = knowledge_db.query(args.text, embedding)
+        results = knowledge_db.query(embedding)  # Removed 'text' from parameters
         print(f"DEBUG: Query results: {results}")
 
         if results and isinstance(results, list) and len(results) > 0:
             print("Query Results:")
-            for i, doc in enumerate(results):  # Iterate directly over the list
+            for i, doc in enumerate(results):
                 print(f"{i + 1}. {doc}")
         else:
             print("No relevant knowledge found.")
-
