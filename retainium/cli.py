@@ -13,7 +13,7 @@ def process_cli(knowledge_db, embedding_handler):
             print("Error: Failed to generate embedding.")
             return
 
-        knowledge_db.add_entry(args.text, {"embedding": embedding})
+        knowledge_db.add_entry(args.text, embedding)
         print("Knowledge added successfully.")
     
     elif args.command == "query":

@@ -1,10 +1,12 @@
 import chromadb
+import os
 import uuid
 
 class KnowledgeDB:
-    def __init__(self, collection_name="retainium_knowledge"):
-        self.client = chromadb.PersistentClient(path="data/knowledge_db")  # Ensure persistence
-        self.collection = self.client.get_or_create_collection(name=collection_name)
+    def __init__(self, db_path="data/knowledge_db", collection_name="retainium_knowledge"):
+        os.makedirs(db_path, exist_ok=True)  # Ensure the directory exists
+        self.client = chromadb.PersistentClient(path=db_path)  # Persistent storage
+        self.collection = self.client.get_or_create_collection(name=collection_name)  # Valid collection name
 
     def add_entry(self, text, embedding):
         """Adds a new entry to the knowledge database with embedding."""
@@ -14,7 +16,7 @@ class KnowledgeDB:
         doc_id = str(uuid.uuid4())  # Generate a unique ID
         self.collection.add(
             documents=[text], 
-            metadatas=[{}],  # Empty metadata for now
+            metadatas=[{"source": "retainium"}],  # Ensuring metadata is not empty
             embeddings=[embedding],  # Properly passing embeddings
             ids=[doc_id]
         )
@@ -31,3 +33,4 @@ class KnowledgeDB:
         )
         
         return results["documents"][0] if "documents" in results else []
+
