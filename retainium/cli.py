@@ -17,8 +17,12 @@ def process_cli(knowledge_db, embedding_handler):
         print("Knowledge added successfully.")
     
     elif args.command == "query":
-        results = knowledge_db.query(args.text)
-        print("Query Results:")
-        for i, doc in enumerate(results.get("documents", [[]])[0]):
-            print(f"{i+1}. {doc}")
+        embedding = embedding_handler.get_embedding(args.text)
+        results = knowledge_db.query(args.text, embedding)
 
+        print("Query Results:")
+        if results and isinstance(results, list) and len(results) > 0:
+            for i, doc in enumerate(results[0]):  # Assuming first list contains documents
+                print(f"{i + 1}. {doc}")
+        else:
+            print("No relevant knowledge found.")
