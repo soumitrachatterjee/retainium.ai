@@ -1,2 +1,5 @@
-pip install chromadb sentence-transformers llama-cpp-python
-pip install 'protobuf<4' chromadb sentence-transformers llama-cpp-python --upgrade
+chromadb
+sentence-transformers
+argparse
+configparser
+torch 
