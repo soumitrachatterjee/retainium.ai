@@ -103,14 +103,6 @@ llama_cli_path = bin/llama-cli
 The following will help install the required dependencies:
 
 ```bash
-sudo apt update
-sudo apt install git-lfs
-
-git lfs install
-git clone https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF
-cp Mistral-7B-Instruct-v0.1-GGUF/mistral-7b-instruct-v0.1.Q4_K_M.gguf \
-     Mistral-7B-Instruct-v0.1-GGUF/mistral-7b-instruct-v0.1.Q4_K_M.gguf
-
 pip install -r requirements.txt
 ```
 
@@ -151,7 +143,19 @@ You can download a quantized model such as:
 
 - [TheBloke on Hugging Face](https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF)
 
-Example using `huggingface-cli`:
+Using git clone
+(_requires ~105M disk space_)
+```
+sudo apt update
+sudo apt install git-lfs
+
+git lfs install
+git clone https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF
+cp Mistral-7B-Instruct-v0.1-GGUF/mistral-7b-instruct-v0.1.Q4_K_M.gguf \
+     Mistral-7B-Instruct-v0.1-GGUF/mistral-7b-instruct-v0.1.Q4_K_M.gguf
+```
+
+Using `huggingface-cli`:
 
 ```bash
 huggingface-cli download TheBloke/Mistral-7B-Instruct-v0.1-GGUF mistral-7b-instruct-v0.1.Q4_K_M.gguf --local-dir ./data/models/
