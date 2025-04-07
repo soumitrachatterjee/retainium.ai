@@ -2,9 +2,6 @@ import argparse
 from retainium.diagnostics import Diagnostics
 from retainium.llm import LLMHandler
 
-# Initialize LLM
-llm_handler = LLMHandler()
-
 def process_cli(knowledge_db, embedding_handler):
     parser = argparse.ArgumentParser(description="Retainium AI CLI - Personal Knowledge Database")
 
@@ -66,12 +63,22 @@ def process_cli(knowledge_db, embedding_handler):
             return
 
         results = knowledge_db.query(embedding)
-        #context = "\n".join(doc["document"] for doc in results)
         context = "\n".join(doc if isinstance(doc, str) else doc.get("document", "") for doc in results)
         Diagnostics.debug(f"query results (context): {context}")
     
+        # Initialize LLM
+        llm_handler = LLMHandler()
+
+        # Run the query
         if not args.similarity_only and llm_handler.enabled:
-            prompt = f"Use the context below to answer the question.\n\nContext:\n{context}\n\nQuestion:\n{args.text}"
+            # Synthesize the prompt for the LLM
+            # Method 1
+            #prompt = f"Use the context below to answer the question.\n\nContext:\n{context}\n\nQuestion:\n{args.text}"
+            # Method 2
+            prompt = f"Answer the following query using the context.\n\nContext:\n{context}\n\nQuery:\n{args.text}"
+            # Method 3
+            #prompt = f"Only answer the query based strictly on the context below.\n\nContext:\n{context}\n\nQuery:\n{args.text}"
+
             try:
                 response = llm_handler.generate_response(prompt)
                 Diagnostics.note("query results (llm-based):")
@@ -80,11 +87,9 @@ def process_cli(knowledge_db, embedding_handler):
                 Diagnostics.warning(f"failed to invoke LLM: {e}")
                 Diagnostics.note("(fall-back) similarity search results:")
                 for i, doc in enumerate(results):
-                    #print(f"{i+1}. {doc['document']}")
                     print(f"{i + 1}. {doc}")
         else:
             Diagnostics.note("similarity search results:")
             for i, doc in enumerate(results):
-                #print(f"{i+1}. {doc['document']}")
                 print(f"{i + 1}. {doc}")
 
