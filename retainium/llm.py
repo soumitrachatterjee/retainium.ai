@@ -1,6 +1,7 @@
 import subprocess
 import configparser
 import os
+from retainium.diagnostics import Diagnostics
 
 class LLMHandler:
     def __init__(self, config_path="etc/config.ini"):
@@ -35,3 +36,23 @@ class LLMHandler:
             raise RuntimeError(f"LLM execution failed:\n{result.stderr}")
         
         return result.stdout.strip()
+
+    def query(self, question: str, context: str = "") -> str:
+        # Synthesize the prompt for the LLM
+        # Method 1
+        #prompt = f"Use the context below to answer the question."
+        # Method 2
+        prompt = f"Answer the following query using the context."
+        # Method 3
+        #prompt = f"Only answer the query based strictly on the context below."
+
+        # Append the necessary context, question and the placeholder for the answer
+        prompt += f"\n\nContext:\n{context}\n\nQuery:\n{question}\n\nAnswer:"
+        Diagnostics.debug(f"prompt for query: {prompt}")
+        response = self.generate_response(prompt)
+
+        # Clean up the response
+        if response.endswith("[end of text]"):
+            response = response.replace("[end of text]", "").strip()
+
+        return response
