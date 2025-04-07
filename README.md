@@ -1,4 +1,4 @@
-# Retainium.ai
+# retainium.ai
 
 **Retainium.ai** is a local knowledge database and retrieval system that allows users to store, semantically search, and query information using embeddings and a locally hosted Large Language Model (LLM). It is modular, privacy-respecting, and can run entirely offline.
 
