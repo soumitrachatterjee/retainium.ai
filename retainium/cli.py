@@ -1,9 +1,24 @@
 import argparse
 from retainium.diagnostics import Diagnostics
+from retainium.llm import LLMHandler
+
+# Initialize LLM
+llm_handler = LLMHandler()
 
 def process_cli(knowledge_db, embedding_handler):
     parser = argparse.ArgumentParser(description="Retainium AI CLI - Personal Knowledge Database")
-    parser.add_argument("--debug", action="store_true", help="Enable debug output")  # Add debug flag
+
+    # Enable debug output
+    parser.add_argument("--debug", action="store_true", help="Enable debug output")
+
+    # Restrict to similarity searches only (avoid LLM-based queries)
+    parser.add_argument(
+        "--similarity-only",
+        action="store_true",
+        help="Skip LLM and use similarity search only"
+    )
+
+    # Add subparsers for individual commands
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     # Add Command
@@ -51,11 +66,25 @@ def process_cli(knowledge_db, embedding_handler):
             return
 
         results = knowledge_db.query(embedding)
-        Diagnostics.debug(f"query results: {results}")
-
-        if results and isinstance(results, list) and len(results) > 0:
-            Diagnostics.note("query results:")
-            for i, doc in enumerate(results):
-                print(f"{i + 1}. {doc}")
+        #context = "\n".join(doc["document"] for doc in results)
+        context = "\n".join(doc if isinstance(doc, str) else doc.get("document", "") for doc in results)
+        Diagnostics.debug(f"query results (context): {context}")
+    
+        if not args.similarity_only and llm_handler.enabled:
+            prompt = f"Use the context below to answer the question.\n\nContext:\n{context}\n\nQuestion:\n{args.text}"
+            try:
+                response = llm_handler.generate_response(prompt)
+                Diagnostics.note("query results (llm-based):")
+                print("\n", response)
+            except Exception as e:
+                Diagnostics.warning(f"failed to invoke LLM: {e}")
+                Diagnostics.note("(fall-back) similarity search results:")
+                for i, doc in enumerate(results):
+                    #print(f"{i+1}. {doc['document']}")
+                    print(f"{i + 1}. {doc}")
         else:
-            Diagnostics.warning("no relevant knowledge found")
+            Diagnostics.note("similarity search results:")
+            for i, doc in enumerate(results):
+                #print(f"{i+1}. {doc['document']}")
+                print(f"{i + 1}. {doc}")
+
