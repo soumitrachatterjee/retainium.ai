@@ -1,56 +1,94 @@
-import chromadb
 import os
+import json
 import uuid
-from typing import List
+from datetime import datetime
 from retainium.diagnostics import Diagnostics
 
 class KnowledgeDB:
-    def __init__(self, db_path="data/knowledge_db", collection_name="retainium_knowledge"):
-        os.makedirs(db_path, exist_ok=True)  # Ensure the directory exists
-        self.client = chromadb.PersistentClient(path=db_path)
-        self.collection = self.client.get_or_create_collection(name=collection_name)
+    def __init__(self, config):
+        # Accepts either config object or direct path string
+        if isinstance(config, str):
+            self.db_path = config
+        else:
+            self.db_path = config.get("database", "path", fallback="data/knowledge_db")
 
-        if self.collection is None:
-            raise RuntimeError("failed to create or retrieve the collection.")
+        os.makedirs(self.db_path, exist_ok=True)
 
-    def list_entries(self):
-        """Lists all stored knowledge entries."""
-        data = self.collection.get()
-        if "ids" not in data or "documents" not in data:
-            return []
+    def normalize_entry(self, entry: dict) -> dict:
+        """Ensure the entry follows the expected format."""
+        if not isinstance(entry, dict):
+            raise ValueError("Each entry must be a dictionary.")
 
-        return [{"id": entry_id, "document": doc} for entry_id, doc in zip(data["ids"], data["documents"])]
+        # Support nested document field
+        if "document" in entry and isinstance(entry["document"], dict):
+            doc = entry["document"]
+            entry["text"] = doc.get("text", entry.get("text", ""))
+            entry.pop("document")
 
-    def add_entry(self, text: str, embedding: List[float]):
-        """Adds a new entry to the knowledge database with embedding."""
-        if not text or not isinstance(text, str):
-            raise ValueError("text must be a non-empty string.")
+        # Ensure required fields
+        required_fields = ["id", "text", "embedding"]
+        for field in required_fields:
+            if field not in entry or not entry[field]:
+                raise ValueError(f"Missing required field in knowledge entry: {field}")
 
-        if not isinstance(embedding, list) or not embedding or not all(isinstance(i, float) for i in embedding):
-            raise ValueError("embedding must be a non-empty list of floats.")
+        # Set default optional fields
+        entry.setdefault("tags", [])
+        entry.setdefault("source", "")
+        entry.setdefault("timestamp", datetime.now().isoformat())
 
-        doc_id = str(uuid.uuid4())
+        return entry
 
-        self.collection.add(
-            documents=[text],
-            metadatas=[{"source": "retainium"}],
-            embeddings=[embedding],
-            ids=[doc_id]
-        )
+    def add_entry(self, text: str, embedding: list[float], tags: list[str] = None, source: str = None):
+        entry_id = str(uuid.uuid4())
+        entry = {
+            "id": entry_id,
+            "text": text,
+            "embedding": embedding,
+            "tags": tags or [],
+            "source": source or "",
+            "timestamp": datetime.now().isoformat()
+        }
 
-        Diagnostics.debug(f"Entry added with ID: {doc_id}")
-        return doc_id
+        validated = self.normalize_entry(entry)
 
-    def query(self, embedding: List[float], top_k: int = 5):
-        """Retrieves the most relevant entries based on embedding similarity."""
-        if not isinstance(embedding, list) or not all(isinstance(i, float) for i in embedding):
-            raise ValueError("embedding must be a list of floats.")
-    
-        results = self.collection.query(
-            query_embeddings=[embedding],
-            n_results=top_k
-        )
-    
-        # Extract documents from result
-        retrieved_docs = results.get("documents", [[]])[0]  
-        return retrieved_docs
+        file_path = os.path.join(self.db_path, f"{entry_id}.json")
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(validated, f, ensure_ascii=False, indent=2)
+
+        Diagnostics.debug(f"Added entry with ID {entry_id}")
+
+    def list_entries(self) -> list:
+        entries = []
+        for filename in os.listdir(self.db_path):
+            if filename.endswith(".json"):
+                file_path = os.path.join(self.db_path, filename)
+                with open(file_path, "r", encoding="utf-8") as f:
+                    try:
+                        entry = json.load(f)
+                        if isinstance(entry, list):
+                            Diagnostics.warning(f"Skipping list-based legacy file: {filename}")
+                            continue
+                        entry = self.normalize_entry(entry)
+                        entries.append(entry)
+                    except Exception as e:
+                        Diagnostics.warning(f"Failed to load entry from {filename}: {e}")
+        return entries
+
+    def get_all_embeddings(self) -> list[tuple[str, list[float]]]:
+        """Return list of (id, embedding) tuples for similarity search."""
+        result = []
+        for entry in self.list_entries():
+            result.append((entry["id"], entry["embedding"]))
+        return result
+
+    def get_entry_by_id(self, entry_id: str) -> dict | None:
+        file_path = os.path.join(self.db_path, f"{entry_id}.json")
+        if not os.path.exists(file_path):
+            return None
+        with open(file_path, "r", encoding="utf-8") as f:
+            try:
+                entry = json.load(f)
+                return self.normalize_entry(entry)
+            except Exception as e:
+                Diagnostics.warning(f"Failed to load entry {entry_id}: {e}")
+                return None
