@@ -1,28 +1,25 @@
+import json
 from retainium.diagnostics import Diagnostics
 
 def register_list_knowledge_command(subparsers):
     parser = subparsers.add_parser("list", help="List all stored knowledge")
+    parser.add_argument("--json", action="store_true", help="Output as JSON")
     parser.set_defaults(handler=run)
 
-def run(args, knowledge_db, embedding_handler):
-    entries = knowledge_db.list_entries()
-
+def run(args, knowledge_db, *_):
+    entries = knowledge_db.get_all_entries()
     if not entries:
-        Diagnostics.warning("no entries found")
+        Diagnostics.warning("No entries found.")
         return
 
-    Diagnostics.note("stored knowledge entries:")
-    for entry in entries:
-        entry_id = entry.get("id", "<no-id>")
-        text = entry.get("text") or entry.get("document", {}).get("text", "<no-text>")
-        metadata = entry.get("metadata", {})
-        tags = metadata.get("tags", [])
-        source = metadata.get("source", "")
-        #tags = entry.get("tags", [])
-        #source = entry.get("source", "")
+    if args.json:
+        print(json.dumps([e.__dict__ for e in entries], indent=2))
+        return
 
-        print(f"- ID: {entry_id}")
-        print(f"  Text: {text[:100]}{'...' if len(text) > 100 else ''}")
-        print(f"  Tags: {tags}")
-        print(f"  Source: {source}")
+    Diagnostics.note("Stored knowledge entries:")
+    for entry in entries:
+        print(f"- ID: {entry.id}")
+        print(f"  Text: {entry.text[:100]}{'...' if len(entry.text) > 100 else ''}")
+        print(f"  Source: {entry.source}")
+        print(f"  Tags: {entry.tags}")
         print()

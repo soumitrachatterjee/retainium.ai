@@ -1,47 +1,21 @@
-import sys
-import threading
-from retainium import color
-
-###
-## Example tweaks
-#from retainium.color import TerminalColors
-#TerminalColors.set_color("note", "\033[92m")  # Set note to green
-###
-
 class Diagnostics:
-    """Handles logging of errors, warnings, notes, and debug messages."""
+    @staticmethod
+    def note(message):
+        print(f"[NOTE] {message}")
 
-    _debug_enabled = False
-    _lock = threading.Lock()
+    @staticmethod
+    def warning(message):
+        print(f"[WARNING] {message}")
 
-    @classmethod
-    def enable_debug(cls, enabled: bool):
-        cls._debug_enabled = enabled
+    @staticmethod
+    def error(message):
+        print(f"[ERROR] {message}")
 
-    @classmethod
-    def diagnostic(cls, severity: str, message: str):
-        if severity == "debug" and not cls._debug_enabled:
-            return
+    @staticmethod
+    def debug(message):
+        # Optionally, enable via environment or config
+        print(f"[DEBUG] {message}")
 
-        color_code = color.TerminalColors.get_color(severity)
-        reset = color.TerminalColors.get_color("reset")
-        formatted = f"{color_code}{severity}: {message}.{reset}"
-
-        with cls._lock:
-            print(formatted, file=sys.stderr)
-
-    @classmethod
-    def error(cls, message: str):
-        cls.diagnostic("error", message)
-
-    @classmethod
-    def warning(cls, message: str):
-        cls.diagnostic("warning", message)
-
-    @classmethod
-    def note(cls, message: str):
-        cls.diagnostic("note", message)
-
-    @classmethod
-    def debug(cls, message: str):
-        cls.diagnostic("debug", message)
+    @staticmethod
+    def success(message):
+        print(f"[SUCCESS] {message}")

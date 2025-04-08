@@ -1,54 +1,29 @@
-import json
+# retainium/add_knowledge.py
+
 from retainium.diagnostics import Diagnostics
+from retainium.knowledge import KnowledgeEntry
 
 def register_add_knowledge_command(subparsers):
-    parser = subparsers.add_parser("add", help="Add knowledge to the database")
-    parser.add_argument("--text", help="Input knowledge as text")
-    parser.add_argument("--file", help="Path to file containing knowledge (plain text or JSON)")
-    parser.add_argument("--tags", nargs="+", help="Tags for metadata")
-    parser.add_argument("--source", help="Source of the knowledge")
-    parser.add_argument("--date", help="Date of knowledge")
-    parser.set_defaults(handler=run)
+    parser = subparsers.add_parser("add", help="Add a new knowledge entry")
+    parser.add_argument("--text", type=str, required=True, help="Text content of the entry")
+    parser.add_argument("--tags", nargs="*", help="Optional tags for the entry")
+    parser.add_argument("--source", type=str, help="Source of the entry (e.g., CLI, URL, etc.)")
+    parser.set_defaults(func=run)
 
-def run(args, knowledge_db, embedding_handler):
-    input_text = None
+def run(args, knowledge_db, embedding_handler, llm_handler=None):
+    text = args.text.strip()
+    source = args.source or "CLI"
+    tags = args.tags or []
 
-    if args.text:
-        input_text = args.text
-    elif args.file:
-        try:
-            with open(args.file, "r", encoding="utf-8") as f:
-                if args.file.endswith(".json"):
-                    json_data = json.load(f)
-                    input_text = json_data.get("text")
-                    if not input_text:
-                        Diagnostics.error("JSON file does not contain a 'text' field")
-                        return
-                    args.tags = json_data.get("tags", args.tags)
-                    args.source = json_data.get("source", args.source)
-                    args.date = json_data.get("date", args.date)
-                else:
-                    input_text = f.read()
-        except Exception as e:
-            Diagnostics.error(f"failed to read input file: {e}")
-            return
-
-    if not input_text:
-        Diagnostics.error("no input text provided")
+    if not text:
+        Diagnostics.error("Text is required.")
         return
 
-    embedding = embedding_handler.embed_text(input_text)
-    if embedding is None or not isinstance(embedding, list):
-        Diagnostics.error("failed to generate embedding")
-        return
+    try:
+        entry = KnowledgeEntry(text=text, source=source, tags=tags).to_dict()
+        embedding_vector = embedding_handler.embed(entry["text"])
 
-    metadata = {}
-    if args.tags:
-        metadata["tags"] = args.tags
-    if args.source:
-        metadata["source"] = args.source
-    if args.date:
-        metadata["date"] = args.date
-
-    knowledge_db.add_entry(input_text, embedding, metadata)
-    Diagnostics.note("knowledge added successfully")
+        knowledge_db.add_entry(entry, embedding_vector)
+        Diagnostics.note("Entry added successfully.")
+    except Exception as e:
+        Diagnostics.error(f"Failed to add entry: {e}")
