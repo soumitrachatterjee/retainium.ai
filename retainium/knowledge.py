@@ -112,12 +112,13 @@ class KnowledgeDB:
         except Exception as e:
             Diagnostics.warning(f"Failed to query vector DB: {e}")
             return []
-    
+        Diagnostics.debug(f"Raw Chroma results: {results}")
+
         # Post-process the results
         documents = results.get("documents", [[]])[0]
         distances = results.get("distances", [[]])[0]
         metadatas = results.get("metadatas", [[]])[0]
-        ids = results.get("ids", [[]])[0]
+        ids = results.get("ids", [[]])[0] if "ids" in results else ["" for _ in documents]
     
         matches = []
         for doc, dist, meta, doc_id in zip(documents, distances, metadatas, ids):
