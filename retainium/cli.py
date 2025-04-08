@@ -74,8 +74,8 @@ def process_cli(knowledge_db, embedding_handler):
                 response = llm_handler.query(args.text, context=context)
 
                 # Emit the response from the LLM
-                Diagnostics.note("query results (llm-based):")
-                print("\n", response)
+                Diagnostics.note(f"query results (llm-based)")
+                print(f"{response}")
             except Exception as e:
                 Diagnostics.warning(f"failed to invoke LLM: {e}")
                 Diagnostics.note("(fall-back) similarity search results:")

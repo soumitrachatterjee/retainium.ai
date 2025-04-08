@@ -1,6 +1,8 @@
 import subprocess
 import configparser
 import os
+import re
+import textwrap
 from retainium.diagnostics import Diagnostics
 
 class LLMHandler:
@@ -35,7 +37,30 @@ class LLMHandler:
         if result.returncode != 0:
             raise RuntimeError(f"LLM execution failed:\n{result.stderr}")
         
-        return result.stdout.strip()
+        output = result.stdout.strip()
+
+        # Remove everything before and including "Answer:" (case-insensitive)
+        #match = re.search(r"(?i)Answer\s*:\s*(.*)", output, re.DOTALL)
+        match = re.search(r"(?i)Answer\s*:\s*\n?(.*)", output, re.DOTALL)
+        if match:
+            cleaned = match.group(1)
+        else:
+            cleaned = output
+
+        # Remove "[end of text]" and strip lines
+        cleaned = cleaned.split("[end of text]")[0]
+
+        # De-indent and strip extra whitespace
+        import textwrap
+        cleaned = textwrap.dedent(cleaned).strip()
+        
+        # Optional: Ensure first line doesn't have stray space
+        lines = cleaned.splitlines()
+        if lines:
+            lines[0] = lines[0].lstrip()
+        cleaned = "\n".join(lines).strip()
+        
+        return cleaned
 
     def query(self, question: str, context: str = "") -> str:
         # Synthesize the prompt for the LLM
@@ -49,10 +74,5 @@ class LLMHandler:
         # Append the necessary context, question and the placeholder for the answer
         prompt += f"\n\nContext:\n{context}\n\nQuery:\n{question}\n\nAnswer:"
         Diagnostics.debug(f"prompt for query: {prompt}")
-        response = self.generate_response(prompt)
+        return self.generate_response(prompt)
 
-        # Clean up the response
-        if response.endswith("[end of text]"):
-            response = response.replace("[end of text]", "").strip()
-
-        return response

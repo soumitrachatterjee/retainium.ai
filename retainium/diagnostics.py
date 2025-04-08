@@ -1,37 +1,34 @@
 import sys
-import argparse
 import threading
+from retainium import color
+
+###
+## Example tweaks
+#from retainium.color import TerminalColors
+#TerminalColors.set_color("note", "\033[92m")  # Set note to green
+###
 
 class Diagnostics:
     """Handles logging of errors, warnings, notes, and debug messages."""
 
-    _debug_enabled = False  # Controls debug output
-    _lock = threading.Lock()  # Ensures thread-safe output
-
-    SEVERITY_COLORS = {
-        "error": "\033[91m",    # Red
-        "warning": "\033[93m",  # Yellow
-        "note": "\033[96m",     # Cyan
-        "debug": "\033[95m",    # Magenta
-        "RESET": "\033[0m"      # Reset color
-    }
+    _debug_enabled = False
+    _lock = threading.Lock()
 
     @classmethod
     def enable_debug(cls, enabled: bool):
-        """Enables or disables debug output based on CLI flag."""
         cls._debug_enabled = enabled
 
     @classmethod
     def diagnostic(cls, severity: str, message: str):
-        """Prints a diagnostic message with a given severity."""
         if severity == "debug" and not cls._debug_enabled:
-            return  # Skip debug messages unless debugging is enabled
+            return
 
-        color = cls.SEVERITY_COLORS.get(severity, cls.SEVERITY_COLORS["RESET"])
-        formatted_message = f"{color}{severity}: {message}.{cls.SEVERITY_COLORS['RESET']}"
+        color_code = color.TerminalColors.get_color(severity)
+        reset = color.TerminalColors.get_color("reset")
+        formatted = f"{color_code}{severity}: {message}.{reset}"
 
-        with cls._lock:  # Thread-safe printing
-            print(formatted_message, file=sys.stderr)
+        with cls._lock:
+            print(formatted, file=sys.stderr)
 
     @classmethod
     def error(cls, message: str):
