@@ -1,0 +1,16 @@
+# Ignore Python bytecode
+__pycache__/
+retainium/__pycache__/
+
+# Ignore llama-cli binary
+bin/llama-cli
+
+# Ignore knowledge database files
+data/knowledge_db/
+!data/knowledge_db/.gitkeep  # (optional) allow empty folder tracking if needed
+
+# Ignore SQLite database
+data/knowledge_db/chroma.sqlite3
+
+# Ignore model files
+data/models/*.gguf
