@@ -3,6 +3,7 @@ import json
 import uuid
 from datetime import datetime
 from retainium.diagnostics import Diagnostics
+import chromadb
 
 class KnowledgeDB:
     def __init__(self, config):
@@ -13,6 +14,10 @@ class KnowledgeDB:
             self.db_path = config.get("database", "path", fallback="data/knowledge_db")
 
         os.makedirs(self.db_path, exist_ok=True)
+
+        # Initialize ChromaDB client and collection
+        self.client = chromadb.PersistentClient(path=self.db_path)
+        self.collection = self.client.get_or_create_collection(name="knowledge")
 
     def normalize_entry(self, entry: dict) -> dict:
         """Ensure the entry follows the expected format."""
@@ -92,3 +97,37 @@ class KnowledgeDB:
             except Exception as e:
                 Diagnostics.warning(f"Failed to load entry {entry_id}: {e}")
                 return None
+
+    def query(self, query_vector: list[float], top_k: int = 5) -> list[dict]:
+        """Query the ChromaDB collection using a vector and return top matches."""
+        if not self.collection:
+            return []
+    
+        try:
+            results = self.collection.query(
+                query_embeddings=[query_vector],
+                n_results=top_k,
+                include=["documents", "distances", "metadatas"]
+            )
+        except Exception as e:
+            Diagnostics.warning(f"Failed to query vector DB: {e}")
+            return []
+    
+        # Post-process the results
+        documents = results.get("documents", [[]])[0]
+        distances = results.get("distances", [[]])[0]
+        metadatas = results.get("metadatas", [[]])[0]
+        ids = results.get("ids", [[]])[0]
+    
+        matches = []
+        for doc, dist, meta, doc_id in zip(documents, distances, metadatas, ids):
+            match = {
+                "id": doc_id,
+                "document": doc,
+                "tags": meta,
+                "score": 1.0 - dist  # Chroma returns L2 distance; convert to similarity
+            }
+            matches.append(match)
+    
+        return matches
+
