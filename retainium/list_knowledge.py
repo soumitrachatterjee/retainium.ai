@@ -15,8 +15,11 @@ def run(args, knowledge_db, embedding_handler):
     for entry in entries:
         entry_id = entry.get("id", "<no-id>")
         text = entry.get("text") or entry.get("document", {}).get("text", "<no-text>")
-        tags = entry.get("tags", [])
-        source = entry.get("source", "")
+        metadata = entry.get("metadata", {})
+        tags = metadata.get("tags", [])
+        source = metadata.get("source", "")
+        #tags = entry.get("tags", [])
+        #source = entry.get("source", "")
 
         print(f"- ID: {entry_id}")
         print(f"  Text: {text[:100]}{'...' if len(text) > 100 else ''}")
