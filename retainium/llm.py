@@ -7,8 +7,8 @@ root = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
 default_llm_cli_path = os.path.join(root, "bin", "llama-cli")
 
 # Import required modules
+import re
 import subprocess
-import os
 from retainium.diagnostics import Diagnostics
 
 class LLMHandler:
@@ -23,6 +23,7 @@ class LLMHandler:
         self.gpu_layers = config.getint("llm", "gpu_layers", fallback=0)
         Diagnostics.note(f"LLM {self.cli_path} initialized with model {self.model_path}, context={self.context_length}, temp={self.temperature}")
 
+    # Generate a response from the underlying LLM for the specified prompt
     def generate_response(self, prompt: str) -> str:
         if not self.enabled:
             raise RuntimeError("LLM integration is disabled in config.")
@@ -42,8 +43,15 @@ class LLMHandler:
         result = subprocess.run(command, capture_output=True, text=True)
         if result.returncode != 0:
             raise RuntimeError(f"LLM execution failed:\n{result.stderr}")
+        Diagnostics.debug(f"response from LLM: {result.stdout}")
         
-        return result.stdout.strip()
+        # Cleanup the results to make it more human-friendly
+        match = re.search(r"Answer:\s*(.*?)\s*\[end of text\]", result.stdout, re.DOTALL)
+        if match:
+            response = match.group(1).strip()
+        else:
+            response = ""
+        return response
 
     def query(self, question: str, context: str = "") -> str:
         # Synthesize the prompt for the LLM
@@ -60,7 +68,8 @@ class LLMHandler:
         response = self.generate_response(prompt)
 
         # Clean up the response
-        if response.endswith("[end of text]"):
-            response = response.replace("[end of text]", "").strip()
+        #if response.endswith("[end of text]"):
+        #    response = response.replace("[end of text]", "").strip()
 
         return response
+
