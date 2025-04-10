@@ -53,6 +53,7 @@ class LLMHandler:
             response = ""
         return response
 
+    # Use an optional context to build up a prompt for the LLM query
     def query(self, question: str, context: str = "") -> str:
         # Synthesize the prompt for the LLM
         # Method 1
