@@ -1,14 +1,19 @@
+# Enable relative module lookups
+# (protect against symlinks using realpath())
+import os, sys
+root = os.path.realpath(os.path.dirname(__file__) + "/..")
+if root not in sys.path:
+    sys.path.insert(0, root)
+
+# Import required modules
 import argparse
 from retainium.diagnostics import Diagnostics
 from retainium.color import TerminalColors
 
+# Demo colored diagnostics capabilities
 def demo_colors():
-    print("\n---- Color Demo ----\n")
-    Diagnostics.note("this is a note")
-    Diagnostics.warning("this is a warning")
-    Diagnostics.error("this is an error")
-    Diagnostics.debug("this is a debug message (won't show unless debug is enabled)")
-
+    print("\n---- Diagnostics Color Demo ----\n")
+    Diagnostics.demo()
     print("\nTip: Use `TerminalColors.set_color()` to tweak themes dynamically.")
 
 def main():

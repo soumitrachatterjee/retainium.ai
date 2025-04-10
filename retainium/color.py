@@ -1,4 +1,4 @@
-# retainium.color
+# Modular implementation of color capabilities
 
 class TerminalColors:
     """Encapsulates ANSI color codes and severity-based themes."""
@@ -22,6 +22,7 @@ class TerminalColors:
         "error": COLORS["red"],          # Deep red
         "warning": COLORS["amber"],      # Amber/light red
         "note": COLORS["dark_teal"],     # Dark teal
+        "success": COLORS["green"],      # Green
         "debug": COLORS["magenta"],
         "reset": COLORS["reset"]
     }
@@ -44,3 +45,4 @@ class TerminalColors:
             "debug": cls.COLORS["magenta"],
             "reset": cls.COLORS["reset"]
         })
+
