@@ -53,6 +53,18 @@ class LLMHandler:
             response = ""
         return response
 
+    # Auto generate tags for the given text
+    def auto_tags(self, text: str):
+        # Synthesize the prompt for the LLM
+        prompt = (
+                    "Generate the most relevant tags for the given text "
+                    "that can be used as metadata to index or search "
+                    "this text in future. "
+                 )
+        prompt += f"\n\nText:\n{text}\n\nAnswer:"
+        Diagnostics.debug(f"prompt for LLM based auto tag generation: {prompt}")
+        return self.generate_response(prompt).replace(",", " ").replace("#", "").split()
+
     # Use an optional context to build up a prompt for the LLM query
     def query(self, question: str, context: str = "") -> str:
         # Synthesize the prompt for the LLM
@@ -65,12 +77,6 @@ class LLMHandler:
 
         # Append the necessary context, question and the placeholder for the answer
         prompt += f"\n\nContext:\n{context}\n\nQuery:\n{question}\n\nAnswer:"
-        Diagnostics.note(f"prompt for query: {prompt}")
-        response = self.generate_response(prompt)
-
-        # Clean up the response
-        #if response.endswith("[end of text]"):
-        #    response = response.replace("[end of text]", "").strip()
-
-        return response
+        Diagnostics.debug(f"prompt for LLM query: {prompt}")
+        return self.generate_response(prompt)
 

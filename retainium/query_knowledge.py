@@ -15,7 +15,7 @@ def run(args, knowledge_db, embedding_handler, llm_handler):
     if not query_text:
         Diagnostics.error("query text is empty")
         return
-    Diagnostics.note(f"searching for: {query_text}")
+    Diagnostics.debug(f"searching for: {query_text}")
 
     embedding = embedding_handler.embed(query_text)
     results = knowledge_db.query_entry(embedding)

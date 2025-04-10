@@ -51,6 +51,7 @@ class KnowledgeDB:
 
     # Add the knowledge to the database along with the corresponding embedding
     def add_entry(self, entry: KnowledgeEntry, embedding: List[float]) -> None:
+        # Warn about duplicate entries only in debug mode
         if Diagnostics.is_debug_enabled():
             existing = self.collection.get(ids=[entry.id])
             if existing['ids']:  # Already present

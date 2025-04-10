@@ -9,7 +9,6 @@ from retainium.knowledge import KnowledgeEntry
 def register(subparsers):
     parser = subparsers.add_parser("add", help="Add a new knowledge entry")
     parser.add_argument("--text", type=str, required=True, help="Text content of the entry")
-    parser.add_argument("--tags", nargs="*", help="Optional tags for the entry")
     parser.add_argument("--source", type=str, help="Source of the entry (e.g., CLI, URL, etc.)")
     parser.set_defaults(func=run)
 
@@ -22,7 +21,8 @@ def compute_text_uuid(text: str) -> str:
 def run(args, knowledge_db, embedding_handler, llm_handler):
     text = args.text.strip()
     source = args.source or "CLI"
-    tags = args.tags or []
+    tags = llm_handler.auto_tags(text)
+    Diagnostics.debug(f"auto generated tags: {tags}")
 
     if not text:
         Diagnostics.error("text is required")

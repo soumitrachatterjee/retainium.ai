@@ -27,7 +27,7 @@ class Diagnostics:
 
         color_code = color.TerminalColors.get_color(severity)
         reset = color.TerminalColors.get_color("reset")
-        formatted_message = f"{color_code}{severity}: {message}.{reset}"
+        formatted_message = f"{color_code}{severity}: {message}{reset}"
 
         with cls._lock:  # Thread-safe printing
             print(formatted_message, file=sys.stderr)
