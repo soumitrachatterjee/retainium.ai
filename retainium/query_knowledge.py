@@ -6,7 +6,7 @@ from retainium.knowledge import KnowledgeEntry
 def register(subparsers):
     parser = subparsers.add_parser("query", help="Query the knowledge base")
     parser.add_argument("--text", required=True, help="Text to search for")
-    parser.add_argument("--llm", action="store_true", help="Summarize results using LLM")
+    parser.add_argument("--similarity-only", action="store_true", help="Skip LLM summarization; provide results based on similarity only")
     parser.set_defaults(func=run)
 
 # Handling of the "query" command
@@ -26,14 +26,14 @@ def run(args, knowledge_db, embedding_handler, llm_handler):
 
     # Run the results through the LLM, unless prohibited
     nr = len(results)
-    if args.llm and llm_handler:
-        context = "\n".join(set(entry.text.strip() for entry in results))
-        response = llm_handler.generate_response(f"Summarize the following:\n{context}")
-        Diagnostics.note(f"LLM summary based on the top {nr} matching knowledge entries:")
-        print(response)
-    else:
+    if args.similarity_only:
         Diagnostics.note(f"listing top {nr} matching knowledge entries:")
         for entry in results:
             metadata = entry.to_metadata()
             print(f"[{entry.id}] {entry.text} {metadata}")
+    else:
+        Diagnostics.note(f"LLM summary based on the top {nr} matching knowledge entries:")
+        context = "\n".join(set(entry.text.strip() for entry in results))
+        response = llm_handler.query(question=query_text, context=context)
+        print(response)
 
