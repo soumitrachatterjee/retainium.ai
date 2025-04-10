@@ -23,5 +23,5 @@ def run(args, knowledge_db, embedding_handler, llm_handler):
             print(json.dumps(entry.to_dict(), indent=2))
         else:
             metadata = entry.to_metadata()
-            print(f"[{entry.id}] {entry.text} {metadata}")
+            print(f"[{entry.id[:16]}] {entry.text} {metadata}")
 

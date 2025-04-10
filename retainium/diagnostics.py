@@ -15,6 +15,11 @@ class Diagnostics:
         cls._debug_enabled = enabled
 
     @classmethod
+    def is_debug_enabled(cls) -> bool:
+        """Query if debug mode is enabled or not."""
+        return cls._debug_enabled
+
+    @classmethod
     def diagnostic(cls, severity: str, message: str):
         """Prints a diagnostic message with a given severity."""
         if severity == "debug" and not cls._debug_enabled:

@@ -51,13 +51,20 @@ class KnowledgeDB:
 
     # Add the knowledge to the database along with the corresponding embedding
     def add_entry(self, entry: KnowledgeEntry, embedding: List[float]) -> None:
+        if Diagnostics.is_debug_enabled():
+            existing = self.collection.get(ids=[entry.id])
+            if existing['ids']:  # Already present
+                Diagnostics.warning(f"duplicate entry skipped: {entry.id[:16]}")
+                return
+
+        # Add to the vector database
         self.collection.add(
             ids=[entry.id],
             documents=[entry.text],
             embeddings=[embedding],
             metadatas=[entry.to_metadata()],
         )
-        Diagnostics.note(f"entry added successfully: {entry.id}")
+        Diagnostics.note(f"entry added successfully: {entry.id[:16]}")
 
     # Fetch and list all entries from the database
     def list_entries(self) -> List[KnowledgeEntry]:
