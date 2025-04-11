@@ -53,6 +53,17 @@ class LLMHandler:
             response = ""
         return response
 
+    # Normalize text
+    def normalize_text(self, text: str):
+        # Remove leading bullet symbols or numbers (e.g., "1.", "-", "*", "")
+        text = re.sub(r'^\s*(?:[\d]+[\.\)]|[-*])\s*', '', text)
+
+        # Remove special characters (keep only letters, numbers, and whitespace)
+        text = re.sub(r'[^A-Za-z0-9\s]', '', text)
+
+        # Normalize whitespace
+        return ' '.join(text.split())
+
     # Auto generate tags for the given text
     def auto_tags(self, text: str):
         # Synthesize the prompt for the LLM
@@ -63,7 +74,26 @@ class LLMHandler:
                  )
         prompt += f"\n\nText:\n{text}\n\nAnswer:"
         Diagnostics.debug(f"prompt for LLM based auto tag generation: {prompt}")
-        return self.generate_response(prompt).replace(",", " ").replace("#", "").split()
+        response = self.generate_response(prompt)
+
+        # Process the response
+        words = response.split()
+        seen = set()
+        result = []
+        
+        for tag in words:
+            original = tag.strip()
+
+            if not original:
+                continue
+
+            cleaned = self.normalize_text(original)
+            if cleaned and cleaned not in seen:
+                seen.add(cleaned)
+                result.append(cleaned)
+
+        # Return the processed tags
+        return result
 
     # Use an optional context to build up a prompt for the LLM query
     def query(self, question: str, context: str = "") -> str:

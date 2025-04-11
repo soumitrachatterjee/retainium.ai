@@ -1,9 +1,7 @@
 # Module to add knowledge to the database
 
-import hashlib
-import base64
 from retainium.diagnostics import Diagnostics
-from retainium.knowledge import KnowledgeEntry
+from retainium.knowledge import KnowledgeEntry, compute_text_uuid
 
 # Register command line options for "add"
 def register(subparsers):
@@ -11,11 +9,6 @@ def register(subparsers):
     parser.add_argument("--text", type=str, required=True, help="Text content of the entry")
     parser.add_argument("--source", type=str, help="Source of the entry (e.g., CLI, URL, etc.)")
     parser.set_defaults(func=run)
-
-# Compute a hash from the text to serve as the unique id and to aid deduplication
-def compute_text_uuid(text: str) -> str:
-    sha256_digest = hashlib.sha256(text.strip().encode("utf-8")).digest()
-    return base64.urlsafe_b64encode(sha256_digest).decode("utf-8").rstrip("=")
 
 # Handling of the "add" command
 def run(args, knowledge_db, embedding_handler, llm_handler):

@@ -4,7 +4,8 @@ import os
 root = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
 
 # Import required modules
-import uuid
+import hashlib
+import base64
 from typing import List
 from dataclasses import dataclass, asdict
 import chromadb
@@ -14,6 +15,11 @@ from retainium.diagnostics import Diagnostics
 # The knowledge database collection name
 # (changing this can cause loss of existing knowledge)
 COLLECTION_NAME = "retainium_knowledge"
+
+# Compute a hash from the text to serve as the unique id and to aid deduplication
+def compute_text_uuid(text: str) -> str:
+    sha256_digest = hashlib.sha256(text.strip().encode("utf-8")).digest()
+    return base64.urlsafe_b64encode(sha256_digest).decode("utf-8").rstrip("=")
 
 # The record for each knowledge entry
 @dataclass
@@ -101,14 +107,20 @@ class KnowledgeDB:
             )
         return entries
 
+    # Return a list of all existing knowledge entries
     def export_all(self) -> List[dict]:
         return [entry.to_dict() for entry in self.list_entries()]
 
-    def rebuild_index(self, entries: List[KnowledgeEntry], embeddings: List[List[float]]):
-        self.client.delete_collection("knowledge")
-        self.collection = self.client.get_or_create_collection("knowledge")
-        for entry, embedding in zip(entries, embeddings):
-            self.add_entry(entry, embedding)
+    # Delete the existing collection and recreate using stored entries
+    # Return a list of all existing entries
+    def reinitialize_collection(self, knowledge_db) -> List[KnowledgeEntry]:
+        # Fetch the list of all existing entries
+        entries = knowledge_db.list_entries()
 
-# Alias for consistency across the codebase
-KnowledgeDatabase = KnowledgeDB
+        # Reinitialize the collection
+        self.client.delete_collection(COLLECTION_NAME)
+        self.collection = self.client.get_or_create_collection(COLLECTION_NAME)
+
+        # Return the list of entries to be added back
+        return entries
+
