@@ -33,7 +33,7 @@ def run(args, knowledge_db, embedding_handler, llm_handler):
             print(f"[{entry.id}] {entry.text} {metadata}")
     else:
         Diagnostics.note(f"LLM summary based on the top {nr} matching knowledge entries:")
-        context = "\n".join(set(entry.text.strip() for entry in results))
+        context = "\n".join(entry.text.strip() for entry in results)
         response = llm_handler.query(question=query_text, context=context)
         print(response)
 

@@ -16,9 +16,9 @@ def process_cli(knowledge_db, embedding_handler, llm_handler):
     add_knowledge.register(subparsers)
     list_knowledge.register(subparsers)
     query_knowledge.register(subparsers)
+    export_knowledge.register(subparsers)
 
     # TODO Fixup the following
-    export_knowledge.register_export_knowledge_command(subparsers)
     rebuild_index.register_rebuild_index_command(subparsers)
 
     # Parse command line arguments
