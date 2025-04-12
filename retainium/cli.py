@@ -1,7 +1,7 @@
 # Command line parsing module
 import argparse
 from retainium.diagnostics import Diagnostics
-from retainium import add_knowledge, list_knowledge, query_knowledge, export_knowledge, rebuild_index
+from retainium import add_knowledge, list_knowledge, query_knowledge, export_knowledge, import_knowledge, rebuild_index
 
 def process_cli(knowledge_db, embedding_handler, llm_handler):
     parser = argparse.ArgumentParser(prog="retainium.ai", description="Retainium AI - Personal Knowledge Database")
@@ -17,6 +17,7 @@ def process_cli(knowledge_db, embedding_handler, llm_handler):
     list_knowledge.register(subparsers)
     query_knowledge.register(subparsers)
     export_knowledge.register(subparsers)
+    import_knowledge.register(subparsers)
     rebuild_index.register(subparsers)
 
     # Parse command line arguments

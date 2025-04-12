@@ -1,5 +1,6 @@
 # Module to add knowledge to the database
 
+# Import required modules
 from retainium.diagnostics import Diagnostics
 from retainium.knowledge import KnowledgeEntry, compute_text_uuid
 
