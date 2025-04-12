@@ -20,14 +20,11 @@ def run(args, knowledge_db, embedding_handler, llm_handler):
             if args.input.endswith(".json"):
                 # Load the JSON data from the file
                 json_data = json.load(f)
-
             else:
+                # Load plain-text data from file and wrap into JSON
                 input_text = f.read()
                 json_data = {
                                 "text": input_text,
-                                "tags": [],
-                                "source": os.path.basename(file_path),
-                                "date": datetime.now().strftime('%Y-%m-%d')
                             }
     except Exception as e:
         Diagnostics.error(f"failed to read input file: {e}")
@@ -44,24 +41,11 @@ def run(args, knowledge_db, embedding_handler, llm_handler):
     # Add each entry into the knowledge database
     for entry in entries:
         text = entry["text"].strip()
-        if not text:
-            Diagnostics.error("text is required")
-            continue
-        source = os.path.realpath(__file__)
-        tags = llm_handler.auto_tags(text)
-        #date = datetime.now().strftime('%Y-%m-%d') # TODO 
-        Diagnostics.debug(f"auto generated tags: {tags}")
-
-        # Generate the knowledge entry and the corresponding embedding
-        entry = KnowledgeEntry(id=compute_text_uuid(text), 
-                               text=text, 
-                               source=source, 
-                               tags=tags)
-        embedding_vector = embedding_handler.embed(text)
+        source = os.path.realpath(args.input)
 
         # Add the knowledge to the database
         try:
-            knowledge_db.add_entry(entry, embedding_vector)
+            knowledge_db.add_entry(text, source, embedding_handler, llm_handler)
         except Exception as e:
             Diagnostics.error(f"failed to add entry: {e}")
 

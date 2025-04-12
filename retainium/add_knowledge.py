@@ -15,23 +15,10 @@ def register(subparsers):
 def run(args, knowledge_db, embedding_handler, llm_handler):
     text = args.text.strip()
     source = args.source or "CLI"
-    tags = llm_handler.auto_tags(text)
-    Diagnostics.debug(f"auto generated tags: {tags}")
-
-    if not text:
-        Diagnostics.error("text is required")
-        return
-
-    # Generate the knowledge entry and the corresponding embedding
-    entry = KnowledgeEntry(id=compute_text_uuid(text), 
-                           text=text, 
-                           source=source, 
-                           tags=tags)
-    embedding_vector = embedding_handler.embed(entry.text)
 
     # Add the knowledge to the database
     try:
-        knowledge_db.add_entry(entry, embedding_vector)
+        knowledge_db.add_entry(text, source, embedding_handler, llm_handler)
     except Exception as e:
         Diagnostics.error(f"failed to add entry: {e}")
 

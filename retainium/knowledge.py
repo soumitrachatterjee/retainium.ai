@@ -56,7 +56,28 @@ class KnowledgeDB:
         Diagnostics.note(f"using ChromaDB client collection \"{self.collection.name}\"")
 
     # Add the knowledge to the database along with the corresponding embedding
-    def add_entry(self, entry: KnowledgeEntry, embedding: List[float]) -> None:
+    #def add_entry(self, entry: KnowledgeEntry, embedding: List[float]) -> None:
+    def add_entry(self, text: str, source: str, embedding_handler, llm_handler) -> None:
+        # Guard against empty text
+        if not text:
+            Diagnostics.warning("request to add empty entry ignored")
+            return
+
+        # Auto generate tags for the entry
+        tags = llm_handler.auto_tags(text)
+        Diagnostics.debug(f"auto generated tags: {tags}")
+
+        #date = datetime.now().strftime('%Y-%m-%d') # TODO 
+
+        # Generate the knowledge entry and the corresponding embedding
+        entry = KnowledgeEntry(
+                                id=compute_text_uuid(text), 
+                                text=text, 
+                                source=source, 
+                                tags=tags
+                              )
+        embedding_vector = embedding_handler.embed(text)
+
         # Warn about duplicate entries only in debug mode
         if Diagnostics.is_debug_enabled():
             existing = self.collection.get(ids=[entry.id])
@@ -65,11 +86,12 @@ class KnowledgeDB:
                 return
 
         # Add to the vector database
+        # (ignore duplicate entries silently in non-debug mode)
         self.collection.add(
-            ids=[entry.id],
-            documents=[entry.text],
-            embeddings=[embedding],
-            metadatas=[entry.to_metadata()],
+                            ids=[entry.id],
+                            documents=[entry.text],
+                            embeddings=[embedding_vector],
+                            metadatas=[entry.to_metadata()],
         )
         Diagnostics.note(f"entry added successfully: {entry.id[:16]}")
 

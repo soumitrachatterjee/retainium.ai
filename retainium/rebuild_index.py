@@ -23,26 +23,11 @@ def run(args, knowledge_db, embedding_handler, llm_handler):
     Diagnostics.note(f"rebuilding index for {nr} knowledge entries")
     for entry in entries:
         text = entry.text
-        metadata = entry.to_metadata()
-        source = metadata["source"]
-        tags = llm_handler.auto_tags(text)
-
-        # Ignore empty entries, if any, with a warning
-        if not text:
-            Diagnostics.warning("ignoring entry with missing text")
-            continue
-
-        # Generate the knowledge entry and the corresponding embedding
-        embedding_vector = embedding_handler.embed(text)
-        kb = KnowledgeEntry(id=compute_text_uuid(text), 
-                            text=text, 
-                            source=source, 
-                            tags=tags)
+        source = entry.to_metadata()["source"]
 
         # Add the knowledge to the database
         try:
-            knowledge_db.add_entry(kb, embedding_vector)
-            Diagnostics.debug(f"rebuilt index: {kb}")
+            knowledge_db.add_entry(text, source, embedding_handler, llm_handler)
         except Exception as e:
             Diagnostics.error(f"failed to add entry: {e}")
 
