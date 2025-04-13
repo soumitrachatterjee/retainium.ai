@@ -13,10 +13,15 @@ from retainium.diagnostics import Diagnostics
 from retainium.embeddings import EmbeddingHandler
 from retainium.knowledge import KnowledgeDB
 from retainium.llm import LLMHandler
+from retainium.text_utils import TextHandler
 
 def main():
     # Load configuration
     config = load_config()
+
+    # Configure text handling
+    # (singleton, static - no need to pass around)
+    text_handler = TextHandler(config)
 
     # Setup embedings model
     model_name = config.get("embeddings", "model", fallback="all-MiniLM-L6-v2")

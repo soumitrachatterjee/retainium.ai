@@ -4,7 +4,7 @@
 import os
 import json
 from retainium.diagnostics import Diagnostics
-from retainium.text_utils import extract_and_chunk_pdf
+from retainium.text_utils import chunk_text, extract_and_chunk_pdf
 
 # Register command line options for "import"
 def register(subparsers):
@@ -23,14 +23,13 @@ def run(args, knowledge_db, embedding_handler, llm_handler):
             elif args.input.endswith(".pdf"):
                 # Create a list of JSON entries using the chunks of text from the PDF
                 chunks = extract_and_chunk_pdf(args.input)
-                Diagnostics.debug(f"Chunks: {chunks}")
+                Diagnostics.note(f"pdf file chunked into {len(chunks)} chunks")
                 json_data = [{ "text": chunk } for chunk in chunks]
             else:
                 # Load plain-text data from file and wrap into JSON
-                input_text = f.read()
-                json_data = {
-                                "text": input_text,
-                            }
+                chunks = chunk_text(f.read())
+                Diagnostics.note(f"text file chunked into {len(chunks)} chunks")
+                json_data = [{ "text": chunk } for chunk in chunks]
     except Exception as e:
         Diagnostics.error(f"failed to read input file: {e}")
         return

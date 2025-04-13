@@ -10,6 +10,39 @@ from typing import List
 import re
 from retainium.diagnostics import Diagnostics
 
+# Singleton class, enabling easy global access to all configured values
+class TextHandler:
+    _instance = None
+
+    def __new__(cls, config=None):
+        if cls._instance is None:
+            cls._instance = super(TextHandler, cls).__new__(cls)
+            cls._instance._initialize(config)
+        return cls._instance
+
+    # Initialize with values from configuration file; fallback on defaults
+    def _initialize(self, config):
+        # Chunking configuration
+        self.chunking_enabled = config.getboolean("chunking", "enabled", fallback=True)
+        self.chunk_size = config.getint("chunking", "chunk_size", fallback=512)
+        self.chunk_overlap = config.getint("chunking", "chunk_overlap", fallback=64)
+        self.chunk_size_fallback = config.getint("chunking", 
+                                                 "chunk_size_fallback", 
+                                                 fallback=256)
+        self.single_char_line_threshold = config.getfloat("chunking", 
+                                                          "single_char_line_threshold", 
+                                                          fallback=0.5)
+        self.short_line_threshold = config.getfloat("chunking", 
+                                                    "short_line_threshold", 
+                                                    fallback=0.6)
+        self.avg_line_length_threshold = config.getfloat("chunking", 
+                                                         "avg_line_length_threshold",
+                                                         fallback=10)
+        # OCR configuration
+        self.ocr_enabled = config.getboolean("ocr", "enabled", fallback=True)
+        self.ocr_dpi = config.getint("ocr", "dpi", fallback=300)
+        Diagnostics.note(f"text handler initialized with chunk_size={self.chunk_size}")
+
 # Remove excessive whitespace and line breaks
 def clean_text(text: str) -> str:
     # Eliminate noisy lines
@@ -33,17 +66,23 @@ def clean_text(text: str) -> str:
     return text.strip()
 
 # Chunk text using LangChain's RecursiveCharacterTextSplitter
-def chunk_text(text: str, chunk_size: int = 300, chunk_overlap: int = 50) -> List[str]:
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=chunk_size,
-        chunk_overlap=chunk_overlap,
-        separators=["\n\n", "\n", ".", "!", "?", " ", ""]
-    )
-    return splitter.split_text(text)
+def chunk_text(text: str) -> List[str]:
+    text_handler = TextHandler()
+    if text_handler.chunking_enabled:
+        splitter = RecursiveCharacterTextSplitter(
+            chunk_size=text_handler.chunk_size,
+            chunk_overlap=text_handler.chunk_overlap,
+            separators=["\n\n", "\n", ".", "!", "?", " ", ""]
+        )
+        return splitter.split_text(text)
+    else:
+        Diagnostics.warning(f"text chunking disabled")
+        return [text.strip()]
 
 # Heuristic to detect if text is mostly unusable 
 # (e.g., vertical letters, too much whitespace, etc.)
 def looks_like_garbage(text: str) -> bool:
+    text_handler = TextHandler()
     lines = text.splitlines()
     if not lines:
         return True
@@ -54,22 +93,36 @@ def looks_like_garbage(text: str) -> bool:
     short_lines = sum(1 for line in lines if len(line.strip()) < 20)
     avg_line_length = sum(len(line.strip()) for line in lines) / total_line_len
 
+    single_char_lines_ratio = single_char_lines / total_line_len
+    short_line_ratio = short_lines / total_line_len
+    Diagnostics.debug(f"Single line ratio: {single_char_lines_ratio}")
+    Diagnostics.debug(f"Short line ratio: {short_line_ratio}")
+    Diagnostics.debug(f"Average line length: {avg_line_length}")
     return (
-            (short_lines / total_line_len) > 0.6 
+            short_line_ratio > text_handler.single_char_line_threshold 
             or
-            (avg_line_length < 10 and single_char_lines > 0.5 * len(lines))
+            (
+                avg_line_length < text_handler.avg_line_length_threshold 
+                and 
+                single_char_lines_ratio > text_handler.single_char_line_threshold
+            )
            )
 
 # Extract text using OCR from scanned/image-only PDFs
 def extract_text_via_ocr(pdf_path: str) -> str:
-    images = convert_from_path(pdf_path, dpi=300)
-    ocr_text = []
+    text_handler = TextHandler()
+    if text_handler.ocr_enabled:
+        images = convert_from_path(pdf_path, text_handler.ocr_dpi)
+        ocr_text = []
 
-    for idx, image in enumerate(images):
-        text = pytesseract.image_to_string(image)
-        ocr_text.append(f"[Page {idx + 1}]\n{text.strip()}")
+        for idx, image in enumerate(images):
+            text = pytesseract.image_to_string(image)
+            ocr_text.append(f"[Page {idx + 1}]\n{text.strip()}")
 
-    return "\n\n".join(ocr_text)
+        return "\n\n".join(ocr_text)
+    else:
+        Diagnostics.warning(f"OCR disabled")
+        return ""
 
 # Extract text using PyMuPDF 
 # (if empty or garbage, fallback to OCR)
@@ -86,9 +139,9 @@ def extract_text_from_pdf(pdf_path: str) -> str:
     return clean_text(full_text)
 
 # Extract and chunk text from a PDF file with OCR fallback and quality check
-def extract_and_chunk_pdf(pdf_path: str, chunk_size: int = 300, chunk_overlap: int = 50) -> List[str]:
+def extract_and_chunk_pdf(pdf_path: str) -> List[str]:
     raw_text = extract_text_from_pdf(pdf_path)
-    chunks = chunk_text(raw_text, chunk_size, chunk_overlap)
+    chunks = chunk_text(raw_text)
     ''' Example
         Diagnostics.note(f"Total {len(chunks)} chunks")
         for i, chunk in enumerate(chunks):
