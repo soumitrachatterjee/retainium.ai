@@ -56,7 +56,6 @@ class KnowledgeDB:
         Diagnostics.note(f"using ChromaDB client collection \"{self.collection.name}\"")
 
     # Add the knowledge to the database along with the corresponding embedding
-    #def add_entry(self, entry: KnowledgeEntry, embedding: List[float]) -> None:
     def add_entry(self, text: str, source: str, embedding_handler, llm_handler) -> None:
         # Guard against empty text
         if not text:

@@ -2,7 +2,6 @@
 
 # Import required modules
 from retainium.diagnostics import Diagnostics
-from retainium.knowledge import KnowledgeEntry, compute_text_uuid
 
 # Register command line options for "add"
 def register(subparsers):

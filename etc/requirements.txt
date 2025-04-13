@@ -1,6 +1,10 @@
-chromadb
-sentence-transformers
 argparse
+chromadb
 configparser
-torch 
+langchain
 llama-stack
+pdf2image 
+pymupdf
+pytesseract 
+sentence-transformers
+torch 
