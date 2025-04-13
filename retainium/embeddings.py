@@ -13,6 +13,5 @@ class EmbeddingHandler:
             return []
 
         embedding = self.model.encode(text, convert_to_tensor=False).tolist()
-        #Diagnostics.note(f"encoded \"{text}\" => \"{embedding}\"")
         return embedding
 
