@@ -21,6 +21,7 @@
   - [Debug Mode](#debug-mode)
 - [Example Use Cases](#example-use-cases)
 - [References](#references)
+- [License and Data Ownership](#license-and-data-ownership)
 
 ---
 
@@ -234,3 +235,18 @@ Use for journaling, storing key ideas, travel notes, or reading summaries.
 - [`sentence-transformers`](https://www.sbert.net/): Embedding generator.
 - [`Chroma`](https://www.trychroma.com/): Local vector database.
 
+## License and Data Ownership
+
+This project is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0). This means:
+
+    The software code must remain open source, including any modified versions or hosted services derived from it.
+
+    The original copyright notice and license must be preserved.
+
+    Any publicly accessible modified versions must also be released under the AGPL-3.0 license.
+
+However, this license does not apply to your personal or organizational data.
+
+You retain full ownership, rights, and control over all knowledge entries, metadata, queries, and content handled by this application. The AGPL-3.0 license only governs the application’s source code, not the data it stores or processes.
+
+If you deploy or use this tool in a commercial or private setting, your data is not required to be open-sourced, and remains your exclusive property.
