@@ -73,7 +73,9 @@ class LLMHandler:
         prompt = (
                     "Generate the most relevant tags for the given text "
                     "that can be used as metadata to index or search "
-                    "this text in future. "
+                    "this text in future, excluding common words such as "
+                    "\"and\", \"of\", \"in\", \"to\", etc. as well as "
+                    "punctuation marks and symbols as tags."
                  )
         prompt += f"\n\nText:\n{text}\n\nAnswer:"
         Diagnostics.debug(f"prompt for LLM based auto tag generation: {prompt}")
@@ -97,6 +99,38 @@ class LLMHandler:
 
         # Return the processed tags
         return result
+
+    # Summarize key information from given text, leveraging prior context, if any
+    def summarize_info(self, text: str, context: str = "") -> str:
+        # Synthesize the prompt for the LLM
+        prompt = (
+                    "Extract the key information from the given text "
+                    "portion into a brief form, ensuring no key data is "
+                    "missed."
+                 )
+        
+        if context:
+            prompt += (
+                        "The provided context is a summary from the prior "
+                        "portion of the extract. Do not replicate the same "
+                        "in your answer, but use the context to fill in "
+                        "any missing information, if required. "
+                        "In case the context provides all the key "
+                        "information present in the text and hence no "
+                        "further extraction is necessary, then just repond "
+                        "with the word \"REPEATED\"."
+                      )
+            prompt += f"\n\nText:\n{text}\n\nContext:\n{context}\n\nAnswer:"
+        else:
+            prompt += f"\n\nText:\n{text}\n\nAnswer:"
+        Diagnostics.debug(f"prompt for LLM based summarization: {prompt}")
+
+        # Return the response generated from the LLM
+        response = self.generate_response(prompt)
+        if response.lower() == "repeated":
+            Diagnostics.debug(f"Summarization of chunk caused repetition; ignored")
+            response = None
+        return response
 
     # Use an optional context to build up a prompt for the LLM query
     def query(self, question: str, context: str = "") -> str:

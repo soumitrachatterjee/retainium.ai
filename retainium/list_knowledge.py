@@ -10,6 +10,7 @@ from retainium.knowledge import KnowledgeEntry
 def register(subparsers):
     parser = subparsers.add_parser("list", help="List all stored knowledge")
     parser.add_argument("--json", action="store_true", help="Output as JSON")
+    parser.add_argument("--terse", action="store_true", help="List brief ids")
     parser.set_defaults(func=run)
 
 # Handling of the "list" command
@@ -26,5 +27,8 @@ def run(args, knowledge_db, embedding_handler, llm_handler):
             print(json.dumps(entry.to_dict(), indent=2))
         else:
             metadata = entry.to_metadata()
-            print(f"[{entry.id[:16]}] {entry.text} {metadata}")
+            id = entry.id
+            if args.terse:
+                id = entry.id[:16]
+            print(f"[{id}]\n{entry.text} {metadata}\n\n")
 

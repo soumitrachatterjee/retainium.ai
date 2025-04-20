@@ -13,11 +13,14 @@ from retainium.text_utils import chunk_text, extract_and_chunk_pdf
 def register(subparsers):
     parser = subparsers.add_parser("import", help="Import new knowledge entries from file")
     parser.add_argument("--input", required=True, help="Path to file containing knowledge (plain text or JSON)")
+    parser.add_argument("--mbox", action="store_true", help="File to be imported is a Thunderbird mailbox (MBOX format)")
     parser.set_defaults(func=run)
 
 # Handling of the "import" command
 def run(args, knowledge_db, embedding_handler, llm_handler):
     json_data = None
+    #if args.mbox:
+    #    Diagnostics.warning("MBOX format")
     try:
         with open(args.input, "r", encoding="utf-8") as f:
             if args.input.endswith(".json"):
@@ -46,9 +49,21 @@ def run(args, knowledge_db, embedding_handler, llm_handler):
         Diagnostics.error("invalid JSON format: expected a list or a dict.")
 
     # Add each entry into the knowledge database
+    prior_context = ""
     for entry in entries:
         text = entry["text"].strip()
         source = os.path.realpath(args.input)
+
+        # Summarize key information
+        # (leverage prior context, if available)
+        text = llm_handler.summarize_info(text, prior_context)
+        if text:
+            Diagnostics.debug(f"Summary info: {text}")
+            Diagnostics.debug(f"Prior context: {prior_context}")
+            prior_context = text
+        else:
+            Diagnostics.warning(f"Summary info: no new info")
+            continue
 
         # Add the knowledge to the database
         try:
