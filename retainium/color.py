@@ -1,3 +1,6 @@
+# Copyright (C) 2024-2025 Soumitra Chatterjee
+# Licensed under the GNU AGPL-3.0. See LICENSE file for details.
+
 # Modular implementation of color capabilities
 
 class TerminalColors:

@@ -1,3 +1,6 @@
+# Copyright (C) 2024-2025 Soumitra Chatterjee
+# Licensed under the GNU AGPL-3.0. See LICENSE file for details.
+
 # Module to query knowledge from the database
 from retainium.diagnostics import Diagnostics
 from retainium.knowledge import KnowledgeEntry

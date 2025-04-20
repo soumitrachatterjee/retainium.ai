@@ -1,3 +1,6 @@
+# Copyright (C) 2024-2025 Soumitra Chatterjee
+# Licensed under the GNU AGPL-3.0. See LICENSE file for details.
+
 # Module to rebuild the index for all existing knowledge in the database
 
 # Import required modules
